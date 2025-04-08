@@ -1,0 +1,218 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+//define tamanho da fila
+#define TAM 10
+
+//define estrutura das skills
+typedef struct {
+    char nome[50];
+    int cooldown;
+    int efeito;
+    char tipo[20]; //dano, cura, buff, e possíveis efeitos futuros
+
+} Skill;
+
+//define estrutura da fila de skills
+typedef struct {
+    Skill fila[TAM];
+    int inicio, fim;
+} FilaSkill;
+
+//limpa tela do console a cada interação dependendo do OS
+void limparTela(){
+    #ifdef _WIN32
+        system("cls");
+    #else
+        system("clear");
+    #endif
+}
+
+//Dá inicio a fila
+void iniciarFila(FilaSkill *f){
+    f->inicio = 0;
+    f->fim = 0;
+}
+
+//verificar se fila = vazia
+int estaVazia(FilaSkill *f){
+    return f->inicio == f->fim;
+}
+
+//verificar se fila = cheia
+int estaCheia(FilaSkill *f){
+    return f->fim == TAM;
+}
+
+//adicionando skill na fila
+void alinhar(FilaSkill *f, Skill s){
+    if (!estaCheia(f)){
+        f->fila[f->fim] = s;
+        f->fim++;
+        printf("Skill %s adicionada à fila!\n", s.nome);
+    }else{
+        printf("Fila de skills cheia!\n");
+    }
+}
+
+//removendo e retorna próxima skill da fila
+Skill usarSkill(FilaSkill *f){
+    Skill s = {"Nenhuma", 0, 0};
+    if (!estaVazia(f)){
+        s = f->fila[f->inicio];
+        f->inicio++;
+        if (f->inicio == f->fim){
+            iniciarFila(f); //reinicia a fila se estiver vazia
+        }
+    } else{
+        printf("Fila de skills vazia!\n");
+    }
+    return s;
+}
+
+//Executando skill em prioridade fora do padrão FIFO
+Skill usarSkillPrioridade(FilaSkill *f, const char *nomeSkill){
+    Skill prioridade = {"Não encontrada", 0, 0, "Nenhum"};
+    for (int i = f->inicio; i < f->fim; i++){
+        if (strcmp(f->fila[i].nome, nomeSkill) == 0){
+            prioridade = f->fila[i];
+            for (int j = i; j < f->fim - 1; j++){
+                f->fila[j] = f->fila[j + 1];
+            }
+            f->fim--;
+            break;
+        }
+    }
+    return prioridade;
+}
+
+//executa uma das skills escolhidas
+void executarSkill(Skill s){
+    if (strcmp(s.tipo, "Dano") == 0){
+        printf("Skill usada: %s - Causou %d de dano!\n", s.nome, s.efeito);
+    } else if (strcmp(s.tipo, "Cura") == 0){
+        printf("Skill usada: %s - Curou %d de HP!\n", s.nome, s.efeito);
+    } else if (strcmp(s.tipo, "Buff") == 0){
+        printf("Skill usada: %s - Buffou %d!\n", s.nome, s.efeito);
+    } else {
+        printf("Skill %s não está no seu Grimório de Spells!\n", s.nome);
+    }
+}
+
+//Exibir conteúdo da fila
+void exibeFila(FilaSkill *f){
+    printf("Fila de skills:\n");
+    for (int i = f->inicio; i < f->fim; i++){
+        printf("-> %s (Dano: %d, Cooldown: %ds)\n", f->fila[i].nome, f->fila[i].efeito, f->fila[i].cooldown);
+     
+    }
+    printf("\n");
+}
+//menu de selecao das skills
+//separado por tipo de skill
+void menuSelecao(FilaSkill *f) {
+    int escolha = 0;
+    while (escolha != -1) {
+        printf("\n=== MENU DE SKILLS ===\n");
+        
+        printf(">> Buffs:\n");
+        printf("[1] Bênção\n");
+        printf("[2] Agilidade\n");
+        printf("[3] Kyrie Elesion\n");
+        printf("[4] Impositio Manus\n");
+        printf("[5] Magnificat\n");
+        printf("[6] Glória\n");
+        printf("[7] Escudo Mágico\n");
+
+        printf("\n>> Cura:\n");
+        printf("[8] Curar\n");
+
+        printf("\n>> Dano:\n");
+        printf("[9] Luz Divina\n");
+        printf("[10] Magnus Exorcismus\n");
+        printf("[11] Esconjurar\n");
+
+        printf("\n[0] Terminar seu turno e executar próxima skill da fila\n");
+        printf("[-1] Sair\n");
+        printf("Escolha uma opção: ");
+        scanf("%d", &escolha);
+
+        //limpa tela a cada interacao do usuário
+        limparTela();
+
+        //verifica se a opção escolhida é válida
+        printf("Você escolheu a opção: %d\n", escolha);
+        switch (escolha) {
+            case 1:alinhar(f, (Skill){"Bênção", 1, 0, "Buff"}); break;
+            case 2:alinhar(f, (Skill){"Agilidade", 1, 0, "Buff"}); break;
+            case 3:alinhar(f, (Skill){"Kyrie Elesion", 2, 0, "Buff"}); break;
+            case 4:alinhar(f, (Skill){"Impositio Manus", 6, 0, "Buff"}); break;
+            case 5:alinhar(f, (Skill){"Magnificat", 6, 0, "Buff"}); break;
+            case 6:alinhar(f, (Skill){"Glória", 2, 0, "Buff"}); break;
+            case 7:alinhar(f, (Skill){"Escudo Mágico", 10, 0, "Buff"}); break;
+            case 8:alinhar(f, (Skill){"Curar", 4, 65, "Cura"}); break;
+            case 9:alinhar(f, (Skill){"Luz Divina", 2, 80, "Dano"}); break;
+            case 10:alinhar(f, (Skill){"Magnus Exorcismus", 6, 130, "Dano"}); break;
+            case 11:alinhar(f, (Skill){"Esconjurar", 6, 100, "Dano"}); break;
+            case 0:
+                if (!estaVazia(f)) {
+                     int achouCurar = 0;
+
+                    // Verifica se "Curar" está presente na fila
+                    for (int i = f->inicio; i < f->fim; i++) {
+                        if (strcmp(f->fila[i].nome, "Curar") == 0) {
+                            achouCurar = 1;
+                            break;
+                        }
+                    }
+                        //Curar foi encontrado na fila, pulando a fila FIFO
+                        Skill s;
+                        if (achouCurar) {
+                            s = usarSkillPrioridade(f, "Curar");
+                            printf("Emergência!: Skill de cura ao resgate!\n");
+                        } else {
+                            s = usarSkill(f);
+                        }
+
+                        executarSkill(s);
+                    } else {
+                        printf("Fila vazia!\n");
+                    }
+                    break;
+            //comando de quit :D
+            case -1:
+                printf("Saindo...\n");
+                break;
+            default:
+                printf("Opção inválida!\n");
+        }
+
+        exibeFila(f);
+    }
+}
+
+//funcao principal
+int main(){
+    //inicia fila de skills
+    FilaSkill fila;
+    iniciarFila(&fila);
+
+    //exibicao ada fila
+    exibeFila(&fila);
+
+    //Utilizando skill sem prioridade
+    Skill usada = usarSkill(&fila);
+    executarSkill(usada);
+    exibeFila(&fila);
+
+    //menu de selecao skills
+    menuSelecao(&fila);
+
+    //Utilizando skill com prioridade
+    Skill prioridade = usarSkillPrioridade(&fila, "Curar");
+    executarSkill(prioridade);
+    exibeFila(&fila);
+
+    return 0;
+}
